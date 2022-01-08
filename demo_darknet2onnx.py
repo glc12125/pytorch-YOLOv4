@@ -11,6 +11,7 @@ from tool.darknet2onnx import *
 
 
 def main(cfg_file, weight_file, image_path, batch_size, namesfile):
+def main(cfg_file, namesfile, weight_file, image_path, batch_size):
 
     if batch_size <= 0:
         onnx_path_demo = transform_to_onnx(cfg_file, weight_file, batch_size)
@@ -47,18 +48,6 @@ def detect(session, image_src, namesfile):
     outputs = session.run(None, {input_name: img_in})
 
     boxes = post_processing(img_in, 0.4, 0.6, outputs)
-
-    #num_classes = 80
-    #if num_classes == 20:
-    #    namesfile = 'data/voc.names'
-    #elif num_classes == 80:
-    #    namesfile = 'data/coco.names'
-    #elif num_classes == 6:
-    #    namesfile = 'data/bus.names'
-    #elif num_classes == 4:
-    #    namesfile = 'data/kitti_coco.names'
-    #else:
-    #    namesfile = 'data/names'
 
     class_names = load_class_names(namesfile)
     plot_boxes_cv2(image_src, boxes[0], savename='predictions_onnx.jpg', class_names=class_names)

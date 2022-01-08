@@ -419,10 +419,10 @@ class Yolov4(nn.Module):
         self.down4 = DownSample4()
         self.down5 = DownSample5()
         # neck
-        self.neek = Neck(inference)
+        self.neck = Neck(inference)
         # yolov4conv137
         if yolov4conv137weight:
-            _model = nn.Sequential(self.down1, self.down2, self.down3, self.down4, self.down5, self.neek)
+            _model = nn.Sequential(self.down1, self.down2, self.down3, self.down4, self.down5, self.neck)
             pretrained_dict = torch.load(yolov4conv137weight)
 
             model_dict = _model.state_dict()
@@ -443,7 +443,7 @@ class Yolov4(nn.Module):
         d4 = self.down4(d3)
         d5 = self.down5(d4)
 
-        x20, x13, x6 = self.neek(d5, d4, d3)
+        x20, x13, x6 = self.neck(d5, d4, d3)
 
         output = self.head(x20, x13, x6)
         return output
@@ -464,9 +464,9 @@ if __name__ == "__main__":
         n_classes = int(sys.argv[1])
         weightfile = sys.argv[2]
         imgfile = sys.argv[3]
-        height = sys.argv[4]
+        height = int(sys.argv[4])
         width = int(sys.argv[5])
-        namesfile = int(sys.argv[6])
+        namesfile = sys.argv[6]
     else:
         print('Usage: ')
         print('  python models.py num_classes weightfile imgfile namefile')
