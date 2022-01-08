@@ -28,7 +28,7 @@ def transform_to_onnx(weight_file, batch_size, n_classes, IN_IMAGE_H, IN_IMAGE_W
 
     if dynamic:
         x = torch.randn((1, 3, IN_IMAGE_H, IN_IMAGE_W), requires_grad=True)
-        onnx_file_name = "yolov4_-1_3_{}_{}_dynamic.onnx".format(IN_IMAGE_H, IN_IMAGE_W)
+        onnx_file_name = "yolov4_tiny-1_3_{}_{}_dynamic.onnx".format(IN_IMAGE_H, IN_IMAGE_W)
         dynamic_axes = {"input": {0: "batch_size"}, "boxes": {0: "batch_size"}, "confs": {0: "batch_size"}}
         # Export the model
         print('Export the onnx model ...')
@@ -46,7 +46,7 @@ def transform_to_onnx(weight_file, batch_size, n_classes, IN_IMAGE_H, IN_IMAGE_W
 
     else:
         x = torch.randn((batch_size, 3, IN_IMAGE_H, IN_IMAGE_W), requires_grad=True)
-        onnx_file_name = "yolov4_{}_3_{}_{}_static.onnx".format(batch_size, IN_IMAGE_H, IN_IMAGE_W)
+        onnx_file_name = "yolov4_tiny_{}_3_{}_{}_static.onnx".format(batch_size, IN_IMAGE_H, IN_IMAGE_W)
         # Export the model
         print('Export the onnx model ...')
         torch.onnx.export(model,

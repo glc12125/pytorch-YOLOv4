@@ -1,0 +1,5 @@
+python demo_darknet2onnx.py yolov4-kitti-coco.cfg yolov4-kitti-coco_best.weights /media/liangchuan/T7/data/velocity_estimation/161554442.28374
+96/10640.png 1
+/usr/src/tensorrt/bin/trtexec --onnx=yolov4_1_3_512_512_static.onnx --explicitBatch --saveEngine=yolov4_1_3_512_512_static.engine --workspace=4048 --fp16
+
+/usr/src/tensorrt/bin/trtexec --onnx=yolov4_1_3_416_416_static_7_1_3.onnx --explicitBatch --saveEngine=yolov4_tiny_bus_1_3_416_416_static_7_1_3.engine --workspace=4048 --fp16

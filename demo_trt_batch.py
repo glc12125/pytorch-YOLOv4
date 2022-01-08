@@ -2,6 +2,7 @@ import sys
 import os
 import time
 import argparse
+import glob
 import numpy as np
 import cv2
 # from PIL import Image
@@ -116,26 +117,54 @@ def do_inference(context, bindings, inputs, outputs, stream):
 
 
 TRT_LOGGER = trt.Logger()
+img_exts = ['png', 'jpg', 'JPG', 'JPEG', 'jpeg', 'PNG']
+video_exts = ['MP4', 'mp4']
 
-def main(engine_path, image_path, image_size, namesfile):
+def main(engine_path, images_path, image_size, namesfile):
+    img_files = []
+    [img_files.extend(glob.glob(images_path + '/*.' + e, recursive = False)) for e in img_exts]
+    if len(img_files) == 0:
+        print("There are no images in folder {}.".format(images_path))
+    video_files = []
+    [video_files.extend(glob.glob(images_path + '/*.' + e, recursive = False)) for e in video_exts]
+    if len(video_files) == 0:
+        print("There are no videos in folder {}.".format(images_path))
+    if len(img_files) == 0 and len(video_files) == 0:
+        print("No data to process, program will exit")
+        exit(0)
+
     with get_engine(engine_path) as engine, engine.create_execution_context() as context:
         buffers = allocate_buffers(engine, 1)
         IN_IMAGE_H, IN_IMAGE_W = image_size
         context.set_binding_shape(0, (1, 3, IN_IMAGE_H, IN_IMAGE_W))
-
-        image_src = cv2.imread(image_path)
-
         class_names = load_class_names(namesfile)
         num_classes = len(class_names)
-
-        for i in range(2):  # This 'for' loop is for speed check
-                            # Because the first iteration is usually longer
+        for image_path in img_files:
+            image_src = cv2.imread(image_path)
             boxes = detect(context, buffers, image_src, image_size, num_classes)
+            image_base_name = image_path.split('/')[-1].split('.')[0]
+            plot_boxes_cv2(image_src, boxes[0], savename='predictions_trt/' + image_base_name +'.jpg', class_names=class_names)
 
-
-        
-        plot_boxes_cv2(image_src, boxes[0], savename='predictions_trt.jpg', class_names=class_names)
-
+        for video_path in video_files:
+            vidcap = cv2.VideoCapture(video_path)
+            if not vidcap.isOpened():
+                print("Error opening {}".format(video_path))
+                exit(-1)
+            width  = int(vidcap.get(3))
+            height  = int(vidcap.get(4))
+            fourcc = cv2.VideoWriter_fourcc(*'MP4V')
+            video_base_name = video_path.split('/')[-1].split('.')[0]
+            output_name = 'predictions_trt/' + video_base_name + '_processed.mp4'
+            output_video = cv2.VideoWriter(output_name, fourcc, 20.0, (width,height))
+            success, image_src = vidcap.read()
+            while success:
+                boxes = detect(context, buffers, image_src, image_size, num_classes)
+                image_base_name = image_path.split('/')[-1].split('.')[0]
+                img_with_detection = plot_boxes_cv2(image_src, boxes[0], class_names=class_names)
+                output_video.write(img_with_detection)
+                success, image_src = vidcap.read()
+            vidcap.release()
+            output_video.release()
 
 def get_engine(engine_path):
     # If a serialized engine exists, use it instead of building an engine.
@@ -176,7 +205,7 @@ def detect(context, buffers, image_src, image_size, num_classes):
     print('    TRT inference time: %f' % (tb - ta))
     print('-----------------------------------')
 
-    boxes = post_processing(img_in, 0.4, 0.4, trt_outputs)
+    boxes = post_processing(img_in, 0.7, 0.4, trt_outputs)
 
     return boxes
 
@@ -184,7 +213,7 @@ def detect(context, buffers, image_src, image_size, num_classes):
 
 if __name__ == '__main__':
     engine_path = sys.argv[1]
-    image_path = sys.argv[2]
+    images_path = sys.argv[2]
     names_file = sys.argv[3]
     
     if len(sys.argv) < 5:
@@ -194,4 +223,4 @@ if __name__ == '__main__':
     else:
         image_size = (int(sys.argv[4]), int(sys.argv[5]))
     
-    main(engine_path, image_path, image_size, names_file)
+    main(engine_path, images_path, image_size, names_file)
