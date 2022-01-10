@@ -120,7 +120,7 @@ TRT_LOGGER = trt.Logger()
 img_exts = ['png', 'jpg', 'JPG', 'JPEG', 'jpeg', 'PNG']
 video_exts = ['MP4', 'mp4']
 
-def main(engine_path, images_path, image_size, namesfile):
+def main(engine_path, images_path, image_size, namesfile, show_conf):
     img_files = []
     [img_files.extend(glob.glob(images_path + '/*.' + e, recursive = False)) for e in img_exts]
     if len(img_files) == 0:
@@ -143,7 +143,7 @@ def main(engine_path, images_path, image_size, namesfile):
             image_src = cv2.imread(image_path)
             boxes = detect(context, buffers, image_src, image_size, num_classes)
             image_base_name = image_path.split('/')[-1].split('.')[0]
-            plot_boxes_cv2(image_src, boxes[0], savename='predictions_trt/' + image_base_name +'.jpg', class_names=class_names)
+            plot_boxes_cv2(image_src, boxes[0], savename='predictions_trt/' + image_base_name +'.jpg', class_names=class_names, show_confidence=show_conf)
 
         for video_path in video_files:
             vidcap = cv2.VideoCapture(video_path)
@@ -160,7 +160,7 @@ def main(engine_path, images_path, image_size, namesfile):
             while success:
                 boxes = detect(context, buffers, image_src, image_size, num_classes)
                 image_base_name = image_path.split('/')[-1].split('.')[0]
-                img_with_detection = plot_boxes_cv2(image_src, boxes[0], class_names=class_names)
+                img_with_detection = plot_boxes_cv2(image_src, boxes[0], class_names=class_names, show_confidence=show_conf)
                 output_video.write(img_with_detection)
                 success, image_src = vidcap.read()
             vidcap.release()
@@ -209,18 +209,20 @@ def detect(context, buffers, image_src, image_size, num_classes):
 
     return boxes
 
-
+def check_bool(show_conf_str):
+    return show_conf_str.lower() in ['true', '1', 't', 'y', 'yes']
 
 if __name__ == '__main__':
     engine_path = sys.argv[1]
     images_path = sys.argv[2]
     names_file = sys.argv[3]
-    
-    if len(sys.argv) < 5:
+    show_conf = check_bool(sys.argv[4])
+    print("show_conf: {}".format(show_conf))
+    if len(sys.argv) < 6:
         image_size = (416, 416)
-    elif len(sys.argv) < 6:
-        image_size = (int(sys.argv[4]), int(sys.argv[4]))
+    elif len(sys.argv) < 7:
+        image_size = (int(sys.argv[5]), int(sys.argv[5]))
     else:
-        image_size = (int(sys.argv[4]), int(sys.argv[5]))
+        image_size = (int(sys.argv[5]), int(sys.argv[6]))
     
-    main(engine_path, images_path, image_size, names_file)
+    main(engine_path, images_path, image_size, names_file, show_conf)
